@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for 'Inter' and 'Open Sans' -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Custom font classes for Tailwind */
+        .font-inter { font-family: 'Inter', sans-serif; }
+        .font-arial { font-family: Arial, sans-serif; }
+        .font-times { font-family: 'Times New Roman', serif; }
+        .font-georgia { font-family: Georgia, serif; }
+        .font-open-sans { font-family: 'Open Sans', sans-serif; }
+
+        /* General styles to ensure flexbox works well inside Elementor */
+        #root {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f3f4f6; /* Match App's body background */
+            padding: 1rem;
+        }
+
+        /* Responsive adjustments for the main layout */
+        @media (min-width: 1024px) { /* lg breakpoint */
+            #root {
+                flex-direction: row;
+                align-items: flex-start; /* Align items to the top for sticky sidebar */
+            }
+        }
+        /* Hide scrollbar for the controls panel while allowing scroll functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Drag & Drop Visuals for individual list items */
+        .draggable-item.drag-over {
+            border: 2px dashed #60a5fa !important; /* Blue dashed border when dragging over */
+            background-color: #eff6ff !important; /* Light blue background */
+        }
+
+        /* Drag & Drop Visuals for entire sections */
+        .draggable-section-wrapper {
+            transition: border 0.1s ease-in-out, background-color 0.1s ease-in-out;
+            /* Add some margin-bottom for spacing when sections are reordered */
+            margin-bottom: 1.5rem; /* Equivalent to mb-6 */
+        }
+        .draggable-section-wrapper.drag-over-section {
+            border: 2px dashed #34d399 !important; /* Green dashed border for section drag-over */
+            background-color: #e6fffa !important; /* Lighter green background */
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- React and ReactDOM CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX transformation in the browser (for development, not production) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        // Import React hooks directly from the global React object
+        const { useState, useEffect, useRef, useCallback, memo } = React;
+
+        // Main App component
+        const App = () => {
+            // State to hold all resume data
+            const [resumeData, setResumeData] = useState({
+                personalInfo: {
+                    name: 'John Doe',
+                    title: 'Frontend Developer',
+                    email: 'john.doe@example.com',
+                    phone: '123-456-7890',
+                    linkedin: 'linkedin.com/in/johndoe',
+                    github: 'github.com/johndoe',
+                    website: 'johndoe.com',
+                    summary: 'Highly motivated and results-oriented Frontend Developer with 5+ years of experience in building and deploying responsive web applications. Proficient in React, JavaScript, HTML, CSS, and modern web development practices. Seeking to leverage strong technical skills and problem-solving abilities to contribute to a dynamic team.'
+                },
+                experience: [
+                    {
+                        id: 'exp-1',
+                        title: 'Senior Frontend Developer',
+                        company: 'Tech Solutions Inc.',
+                        location: 'San Francisco, CA',
+                        startDate: 'Jan 2022',
+                        endDate: 'Present',
+                        description: [
+                            'Developed and maintained highly interactive user interfaces for enterprise-level applications using React and Redux.',
+                            'Collaborated with UX/UI designers to translate wireframes and mockups into pixel-perfect web components.',
+                            'Optimized application performance, reducing load times by 20% through code splitting and lazy loading.',
+                            'Mentored junior developers and conducted code reviews to ensure high code quality and best practices.'
+                        ]
+                    },
+                    {
+                        id: 'exp-2',
+                        title: 'Frontend Developer',
+                        company: 'Web Innovations Co.',
+                        location: 'New York, NY',
+                        startDate: 'Aug 2019',
+                        endDate: 'Dec 2021',
+                        description: [
+                            'Built responsive web pages and reusable React components for various client projects.',
+                            'Integrated RESTful APIs to fetch and display dynamic data.',
+                            'Participated in agile development cycles, including sprint planning, daily stand-ups, and retrospectives.',
+                            'Implemented unit and integration tests using Jest and React Testing Library.'
+                        ]
+                    }
+                ],
+                education: [
+                    {
+                        id: 'edu-1',
+                        degree: 'Master of Science in Computer Science',
+                        university: 'State University',
+                        location: 'City, State',
+                        startDate: 'Sep 2017',
+                        endDate: 'May 2019',
+                        description: ['Specialized in Web Technologies and Human-Computer Interaction.']
+                    },
+                    {
+                        id: 'edu-2',
+                        degree: 'Bachelor of Technology in Information Technology',
+                        university: 'Local Institute',
+                        location: 'Town, State',
+                        startDate: 'Sep 2013',
+                        endDate: 'May 2017',
+                        description: ['Relevant coursework: Data Structures, Algorithms, Object-Oriented Programming.']
+                    }
+                ],
+                projects: [ // NEW: Projects section
+                    {
+                        id: 'proj-1',
+                        title: 'E-commerce Platform Redesign',
+                        client: 'Retail Innovations LLC',
+                        location: 'Remote', // Added location for consistency
+                        startDate: 'Mar 2023',
+                        endDate: 'Jun 2023',
+                        description: [
+                            'Led the frontend redesign of a large-scale e-commerce platform, improving UI/UX and reducing bounce rate by 15%.',
+                            'Implemented new product filtering and search functionalities using React Context API.',
+                            'Collaborated with a backend team to integrate new GraphQL APIs for faster data fetching.'
+                        ]
+                    }
+                ],
+                skills: {
+                    technical: ['JavaScript (ES6+)', 'React.js', 'Next.js', 'Node.js', 'HTML5', 'CSS3', 'Tailwind CSS', 'Redux', 'Context API', 'Webpack', 'Babel', 'Git', 'RESTful APIs', 'Jest', 'React Testing Library'],
+                    soft: ['Problem Solving', 'Teamwork', 'Communication', 'Adaptability', 'Time Management']
+                },
+                // customSections: [] // Removed customSections
+            });
+
+            // State for selected font and template
+            const [selectedFont, setSelectedFont] = useState('Inter'); // Default font
+            const [selectedTemplate, setSelectedTemplate] = useState('modern'); // Default template
+            const [showConfirmModal, setShowConfirmModal] = useState(false); // State for confirmation modal visibility
+            const [sectionToDelete, setSectionToDelete] = useState(null); // ID of the item to delete
+            const [sectionTypeToDelete, setSectionTypeToDelete] = useState(null); // Type of section to delete (e.g., 'experience')
+            const [isGenerating, setIsGenerating] = useState(false); // State to manage loading/generation status
+
+            // New state to manage the order of top-level sections
+            const [sectionsOrder, setSectionsOrder] = useState([
+                'personalInfo',
+                'experience',
+                'projects', // Added 'projects'
+                'education',
+                'skills',
+                // 'customSections' // Removed 'customSections'
+            ]);
+
+            // NEW: State for font size (e.g., in points or pixels)
+            const [baseFontSize, setBaseFontSize] = useState(11); // Default base font size in pt
+            // NEW: State for bolding preference (e.g., 'normal', 'more', 'minimal')
+            const [boldOption, setBoldOption] = useState('normal'); // Default bolding option
+
+            // ATS Checker states
+            const [jobDescription, setJobDescription] = useState('');
+            const [atsResult, setAtsResult] = useState(null); // { score: 90, keywords: { present: [], missing: [] }, suggestions: [] }
+            const [isCheckingAts, setIsCheckingAts] = useState(false);
+
+
+            // Ref for the resume preview area (useful for display, but not for direct download anymore)
+            const resumePreviewRef = useRef(null);
+
+            // Available fonts for the user to choose from
+            const fonts = [
+                { name: 'Inter', className: 'font-inter' },
+                { name: 'Arial', className: 'font-arial' },
+                { name: 'Times New Roman', className: 'font-times' },
+                { name: 'Georgia', className: 'font-georgia' },
+                { name: 'Open Sans', className: 'font-open-sans' },
+            ];
+
+            // Available templates for the user to choose from
+            const templates = [
+                { id: 'classic', name: 'Classic' },
+                { id: 'modern', name: 'Modern' },
+                { id: 'minimalist', name: 'Minimalist' },
+            ];
+
+            // Function to determine the CSS font-family string based on selected font name
+            const getFontFamily = (fontName) => {
+                switch (fontName) {
+                    case 'Arial': return 'Arial, sans-serif';
+                    case 'Times New Roman': return '"Times New Roman", Times, serif';
+                    case 'Georgia': return 'Georgia, serif';
+                    case 'Open Sans': return '"Open Sans", sans-serif';
+                    case 'Inter':
+                    default: return '"Inter", sans-serif';
+                }
+            };
+
+            // Function to update personal information fields
+            const updatePersonalInfo = useCallback((field, value) => {
+                setResumeData(prevData => ({
+                    ...prevData,
+                    personalInfo: {
+                        ...prevData.personalInfo,
+                        [field]: value
+                    }
+                }));
+            }, []);
+
+            // Function to update an item in a list (experience, education, projects)
+            const updateListItem = useCallback((sectionType, id, field, value) => {
+                setResumeData(prevData => ({
+                    ...prevData,
+                    [sectionType]: prevData[sectionType].map(item =>
+                        item.id === id ? { ...item, [field]: value } : item
+                    )
+                }));
+            }, []);
+
+            // Function to update description points for experience/education/project entries
+            const updateDescriptionPoint = useCallback((sectionType, id, pointIndex, value) => {
+                setResumeData(prevData => ({
+                    ...prevData,
+                    [sectionType]: prevData[sectionType].map(item =>
+                        item.id === id
+                            ? {
+                                ...item,
+                                description: item.description.map((point, index) =>
+                                    index === pointIndex ? value : point
+                                )
+                            }
+                            : item
+                    )
+                }));
+            }, []);
+
+            // Function to add a new description point to an experience/education/project entry
+            const addDescriptionPoint = useCallback((sectionType, id) => {
+                setResumeData(prevData => ({
+                    ...prevData,
+                    [sectionType]: prevData[sectionType].map(item =>
+                        item.id === id
+                            ? {
+                                ...item,
+                                description: [...item.description, ''] // Add an empty point
+                            }
+                            : item
+                    )
+                }));
+            }, []);
+
+            // Function to remove a description point from an experience/education/project entry
+            const removeDescriptionPoint = useCallback((sectionType, id, pointIndex) => {
+                setResumeData(prevData => ({
+                    ...prevData,
+                    [sectionType]: prevData[sectionType].map(item =>
+                        item.id === id
+                            ? {
+                                ...item,
+                                description: item.description.filter((_, index) => index !== pointIndex)
+                            }
+                            : item
+                    )
+                }));
+            }, []);
+
+            // Function to update skills (technical or soft) from a comma-separated string
+            const updateSkills = useCallback((skillType, value) => {
+                const skillsArray = value.split(',').map(s => s.trim()).filter(s => s); // Split by comma, trim whitespace, remove empty strings
+                setResumeData(prevData => ({
+                    ...prevData,
+                    skills: {
+                        ...prevData.skills,
+                        [skillType]: skillsArray
+                    }
+                }));
+            }, []);
+
+            // Function to add a new blank experience entry
+            const addExperience = useCallback(() => {
+                setResumeData(prevData => ({
+                    ...prevData,
+                    experience: [
+                        ...prevData.experience,
+                        {
+                            id: `exp-${Date.now()}`, // Unique ID for the new entry
+                            title: '',
+                            company: '',
+                            location: '',
+                            startDate: '',
+                            endDate: '',
+                            description: ['']
+                        }
+                    ]
+                }));
+            }, []);
+
+            // Function to add a new blank education entry
+            const addEducation = useCallback(() => {
+                setResumeData(prevData => ({
+                    ...prevData,
+                    education: [
+                        ...prevData.education,
+                        {
+                            id: `edu-${Date.now()}`, // Unique ID for the new entry
+                            degree: '',
+                            university: '',
+                            location: '',
+                            startDate: '',
+                            endDate: '',
+                            description: ['']
+                        }
+                    ]
+                }));
+            }, []);
+
+            // NEW: Function to add a new blank project entry
+            const addProject = useCallback(() => {
+                setResumeData(prevData => ({
+                    ...prevData,
+                    projects: [
+                        ...prevData.projects,
+                        {
+                            id: `proj-${Date.now()}`, // Unique ID for the new entry
+                            title: '',
+                            client: '',
+                            location: '',
+                            startDate: '',
+                            endDate: '',
+                            description: ['']
+                        }
+                    ]
+                }));
+            }, []);
+
+            // Function to trigger the confirmation modal before removing an item
+            const removeItem = useCallback((sectionType, id) => {
+                setSectionToDelete(id);
+                setSectionTypeToDelete(sectionType);
+                setShowConfirmModal(true);
+            }, []);
+
+            // Confirm deletion action
+            const confirmRemoveItem = useCallback(() => {
+                setResumeData(prevData => ({
+                    ...prevData,
+                    [sectionTypeToDelete]: prevData[sectionTypeToDelete].filter(item => item.id !== sectionToDelete)
+                }));
+                setShowConfirmModal(false); // Hide modal
+                setSectionToDelete(null); // Reset item to delete
+                setSectionTypeToDelete(null); // Reset section type to delete
+            }, [sectionToDelete, sectionTypeToDelete]);
+
+            // Cancel deletion action
+            const cancelRemoveItem = useCallback(() => {
+                setShowConfirmModal(false); // Hide modal
+                setSectionToDelete(null); // Reset item to delete
+                setSectionTypeToDelete(null); // Reset section type to delete
+            }, []);
+
+            // Generic function to send data to the backend for file generation
+            const sendDataForGeneration = async (fileType, endpoint) => {
+                setIsGenerating(true); // Set loading state
+                try {
+                    // Prepare the payload to send to the backend
+                    const payload = {
+                        resumeData: resumeData,
+                        selectedFont: selectedFont,
+                        selectedTemplate: selectedTemplate,
+                        sectionsOrder: sectionsOrder,
+                        baseFontSize: baseFontSize, // NEW: Include baseFontSize in the payload
+                        boldOption: boldOption,     // NEW: Include boldOption in the payload
+                    };
+
+                    // Send the data to your Python backend
+                    // IMPORTANT: Point to your local Flask server URL
+                    const response = await fetch(`http://127.0.0.1:5000${endpoint}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload),
+                    });
+
+                    if (response.ok) {
+                        // If the backend successfully returns a file, trigger download
+                        const blob = await response.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        // Get filename from response headers if provided by backend, otherwise use a default
+                        const contentDisposition = response.headers.get('Content-Disposition');
+                        let filename = `${resumeData.personalInfo.name.replace(/\s+/g, '-') || 'Resume'}.${fileType.toLowerCase()}`;
+                        if (contentDisposition && contentDisposition.indexOf('attachment') !== -1) {
+                            const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                            const matches = filenameRegex.exec(contentDisposition);
+                            if (matches != null && matches[1]) {
+                                filename = matches[1].replace(/['"]/g, '');
+                            }
+                        }
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url); // Clean up the object URL
+
+                        console.log(`${fileType} generation successful and download initiated!`);
+                    } else {
+                        console.error(`Failed to generate ${fileType}. Status: ${response.status}`);
+                        const errorText = await response.text();
+                        console.error('Backend error:', errorText);
+                        // Using a custom modal/div for alerts instead of window.alert
+                        displayMessage(`Error generating ${fileType}. Please check console for details and ensure backend is running.`, 'error');
+                    }
+                } catch (error) {
+                    console.error(`Network error or error sending data for ${fileType} generation:`, error);
+                    // Using a custom modal/div for alerts instead of window.alert
+                    displayMessage(`Network error or error during ${fileType} generation. Is the backend server running? Check console.`, 'error');
+                } finally {
+                    setIsGenerating(false); // Reset loading state
+                }
+            };
+
+            // Function to handle download of resume as .doc (sends data to backend)
+            const handleDownloadDoc = useCallback(() => {
+                sendDataForGeneration('DOC', '/generate-doc'); // Endpoint for DOC generation
+            }, [resumeData, selectedFont, selectedTemplate, sectionsOrder, baseFontSize, boldOption]); // Added new dependencies
+
+            // Function to handle download of resume as PNG (sends data to backend)
+            const handleDownloadPng = useCallback(() => {
+                sendDataForGeneration('PNG', '/generate-png'); // Endpoint for PNG generation
+            }, [resumeData, selectedFont, selectedTemplate, sectionsOrder, baseFontSize, boldOption]); // Added new dependencies
+
+            // Function to handle download of resume as PDF (sends data to backend)
+            const handleDownloadPdf = useCallback(() => {
+                sendDataForGeneration('PDF', '/generate-pdf'); // Endpoint for PDF generation
+            }, [resumeData, selectedFont, selectedTemplate, sectionsOrder, baseFontSize, boldOption]); // Added new dependencies
+
+            // New function to handle reordering of individual items within sections (Experience, Education, Projects)
+            const handleReorderItems = useCallback((sectionType, draggedId, targetId) => {
+                setResumeData(prevData => {
+                    const currentItems = [...prevData[sectionType]]; // Create a mutable copy
+                    const draggedItemIndex = currentItems.findIndex(item => item.id === draggedId);
+                    const targetItemIndex = currentItems.findIndex(item => item.id === targetId);
+
+                    if (draggedItemIndex === -1 || targetItemIndex === -1) {
+                        console.warn('Dragged or target item not found.');
+                        return prevData;
+                    }
+
+                    const [draggedItem] = currentItems.splice(draggedItemIndex, 1); // Remove dragged item
+                    currentItems.splice(targetItemIndex, 0, draggedItem); // Insert it at new position
+
+                    return {
+                        ...prevData,
+                        [sectionType]: currentItems
+                    };
+                });
+            }, []);
+
+            // New function to handle reordering of entire sections
+            const handleReorderSections = useCallback((draggedSectionId, targetSectionId) => {
+                setSectionsOrder(prevOrder => {
+                    const currentOrder = [...prevOrder];
+                    const draggedIndex = currentOrder.indexOf(draggedSectionId);
+                    const targetIndex = currentOrder.indexOf(targetSectionId);
+
+                    if (draggedIndex === -1 || targetIndex === -1) {
+                        console.warn('Dragged or target section not found.');
+                        return prevOrder;
+                    }
+
+                    const [draggedSection] = currentOrder.splice(draggedIndex, 1);
+                    currentOrder.splice(targetIndex, 0, draggedSection);
+
+                    return currentOrder;
+                });
+            }, []);
+
+            // Function to convert resumeData to a plain text string
+            const convertResumeToPlainText = (data) => {
+                let text = '';
+
+                // Personal Info
+                text += `Name: ${data.personalInfo.name}\n`;
+                text += `Title: ${data.personalInfo.title}\n`;
+                text += `Contact: ${data.personalInfo.email}, ${data.personalInfo.phone}\n`;
+                if (data.personalInfo.linkedin) text += `LinkedIn: ${data.personalInfo.linkedin}\n`;
+                if (data.personalInfo.github) text += `GitHub: ${data.personalInfo.github}\n`;
+                if (data.personalInfo.website) text += `Website: ${data.personalInfo.website}\n`;
+                if (data.personalInfo.summary) text += `Summary:\n${data.personalInfo.summary}\n\n`;
+
+                // Experience
+                if (data.experience && data.experience.length > 0) {
+                    text += 'Experience:\n';
+                    data.experience.forEach(exp => {
+                        text += `- ${exp.title} at ${exp.company}, ${exp.location} (${exp.startDate} - ${exp.endDate})\n`;
+                        exp.description.forEach(point => text += `  • ${point}\n`);
+                    });
+                    text += '\n';
+                }
+
+                // Projects
+                if (data.projects && data.projects.length > 0) {
+                    text += 'Projects:\n';
+                    data.projects.forEach(proj => {
+                        text += `- ${proj.title} for ${proj.client}, ${proj.location} (${proj.startDate} - ${proj.endDate})\n`;
+                        proj.description.forEach(point => text += `  • ${point}\n`);
+                    });
+                    text += '\n';
+                }
+
+                // Education
+                if (data.education && data.education.length > 0) {
+                    text += 'Education:\n';
+                    data.education.forEach(edu => {
+                        text += `- ${edu.degree} from ${edu.university}, ${edu.location} (${edu.startDate} - ${edu.endDate})\n`;
+                        edu.description.forEach(point => text += `  • ${point}\n`);
+                    });
+                    text += '\n';
+                }
+
+                // Skills
+                if (data.skills) {
+                    if (data.skills.technical && data.skills.technical.length > 0) {
+                        text += `Technical Skills: ${data.skills.technical.join(', ')}\n`;
+                    }
+                    if (data.skills.soft && data.skills.soft.length > 0) {
+                        text += `Soft Skills: ${data.skills.soft.join(', ')}\n`;
+                    }
+                    text += '\n';
+                }
+
+                return text;
+            };
+
+            // Function to handle ATS score check
+            const handleCheckAts = async () => {
+                if (!jobDescription.trim()) {
+                    displayMessage('Please enter a job description to check your resume against.', 'warning');
+                    return;
+                }
+
+                setIsCheckingAts(true);
+                setAtsResult(null); // Clear previous results
+
+                const plainTextResume = convertResumeToPlainText(resumeData);
+
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/check-ats', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            resumeText: plainTextResume,
+                            jobDescription: jobDescription,
+                        }),
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log('ATS Result:', result); // Log the result for debugging
+                        setAtsResult(result);
+                        displayMessage('ATS analysis complete!', 'success');
+                    } else {
+                        const errorText = await response.text();
+                        console.error('Backend ATS error:', errorText);
+                        // Using a custom modal/div for alerts instead of window.alert
+                        displayMessage(`Error checking ATS score. Status: ${response.status}. Details: ${errorText}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Network error during ATS check:', error);
+                    // Using a custom modal/div for alerts instead of window.alert
+                    displayMessage('Network error during ATS check. Is the backend server running?', 'error');
+                } finally {
+                    setIsCheckingAts(false);
+                }
+            };
+
+            // Component for editing personal information
+            const PersonalInfoEditor = ({ personalInfo, updatePersonalInfo }) => (
+                <div className="p-4 bg-white rounded-lg shadow-sm mb-4 border border-gray-200">
+                    {/* Title is now handled by DraggableSectionWrapper, removing it from here to avoid redundancy. */}
+                    {Object.keys(personalInfo).map(key => (
+                        <div key={key} className="mb-3">
+                            <label htmlFor={key} className="block text-sm font-medium text-gray-700 capitalize">
+                                {key.replace(/([A-Z])/g, ' $1').trim()}:
+                            </label>
+                            {key === 'summary' ? (
+                                <textarea
+                                    id={key}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 h-24"
+                                    value={personalInfo[key]}
+                                    onChange={(e) => updatePersonalInfo(key, e.target.value)}
+                                    placeholder={`Enter your ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
+                                />
+                            ) : (
+                                <input
+                                    type="text"
+                                    id={key}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+                                    value={personalInfo[key]}
+                                    onChange={(e) => updatePersonalInfo(key, e.target.value)}
+                                    placeholder={`Enter your ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
+                                />
+                            )}
+                        </div>
+                    ))}
+                </div>
+            );
+
+            // Component for editing experience, education, or project sections (list items)
+            const ListItemEditor = ({ items, sectionType, title, updateListItem, updateDescriptionPoint, addDescriptionPoint, removeDescriptionPoint, removeItem, onReorderItems }) => {
+                // Determine if the current section is experience, education, or project
+                const isExperience = sectionType === 'experience';
+                const isEducation = sectionType === 'education';
+                const isProject = sectionType === 'projects'; // NEW: Flag for projects
+
+                // Ref for the custom section textarea to enable auto-resizing
+                const textareaRefs = useRef({}); // Using an object to store refs for each textarea by item.id and pointIndex
+
+                // Function to set the ref for a specific textarea
+                const setTextAreaRef = useCallback((id, pointIndex, el) => {
+                    if (!textareaRefs.current[id]) {
+                        textareaRefs.current[id] = {};
+                    }
+                    textareaRefs.current[id][pointIndex] = el;
+                }, []);
+
+                // Effect to auto-resize textareas when their content changes
+                useEffect(() => {
+                    items.forEach(item => {
+                        // Ensure item.description exists and is an array before mapping
+                        if (item.description && Array.isArray(item.description)) {
+                            item.description.forEach((point, pointIndex) => {
+                                const textarea = textareaRefs.current[item.id]?.[pointIndex];
+                                if (textarea) {
+                                    textarea.style.height = 'auto'; // Reset height
+                                    textarea.style.height = `${Math.max(textarea.scrollHeight, 38)}px`; // Min height for rows="2"
+                                }
+                            });
+                        }
+                    });
+                }, [items]); // Re-run effect when items array changes (content or new/removed items)
+
+                // State to manage the currently dragged item's ID and section type for *list items*
+                const [draggedItemId, setDraggedItemId] = useState(null);
+                const [draggedItemSectionType, setDraggedItemSectionType] = useState(null);
+
+                const handleDragStart = useCallback((e, id, type) => {
+                    setDraggedItemId(id);
+                    setDraggedItemSectionType(type);
+                    e.dataTransfer.effectAllowed = 'move';
+                    const img = new Image();
+                    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                    e.dataTransfer.setDragImage(img, 0, 0);
+                }, []);
+
+                const handleDragOver = useCallback((e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (e.target.closest('.draggable-item')) {
+                        e.target.closest('.draggable-item').classList.add('drag-over');
+                    }
+                }, []);
+
+                const handleDragLeave = useCallback((e) => {
+                    if (e.target.closest('.draggable-item')) {
+                        e.target.closest('.draggable-item').classList.remove('drag-over');
+                    }
+                }, []);
+
+                const handleDrop = useCallback((e, targetId, targetSectionType) => {
+                    e.preventDefault();
+                    if (draggedItemId && draggedItemSectionType === targetSectionType && draggedItemId !== targetId) {
+                        onReorderItems(targetSectionType, draggedItemId, targetId);
+                    }
+                    document.querySelectorAll('.draggable-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+                    setDraggedItemId(null);
+                    setDraggedItemSectionType(null);
+                }, [draggedItemId, draggedItemSectionType, onReorderItems]);
+
+                const handleDragEnd = useCallback((e) => {
+                    document.querySelectorAll('.draggable-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+                    setDraggedItemId(null);
+                    setDraggedItemSectionType(null);
+                }, []);
+
+
+                return (
+                    <div className="p-4 bg-white rounded-lg shadow-sm mb-4 border border-gray-200">
+                        {/* Title is now handled by DraggableSectionWrapper */}
+                        {items.map((item, itemIndex) => (
+                            <div
+                                key={item.id}
+                                className="draggable-item mb-6 p-4 border border-gray-200 rounded-md bg-gray-50 relative cursor-grab"
+                                draggable="true"
+                                onDragStart={(e) => handleDragStart(e, item.id, sectionType)}
+                                onDragOver={handleDragOver}
+                                onDrop={(e) => handleDrop(e, item.id, sectionType)}
+                                onDragLeave={handleDragLeave}
+                                onDragEnd={handleDragEnd}
+                            >
+                                {/* Drag handle for visual cue (optional, but good UX) */}
+                                <div className="absolute top-2 left-2 text-gray-400 cursor-grab hover:text-gray-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                {/* Button to remove an item */}
+                                <button
+                                    onClick={() => removeItem(sectionType, item.id)}
+                                    className="absolute top-2 right-2 p-1 bg-red-100 text-red-600 rounded-full hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+                                    aria-label={`Remove ${title.slice(0, -1)} item`}
+                                    title={`Remove ${title.slice(0, -1)} item`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                {/* Input fields for Experience, Education, or Projects */}
+                                <>
+                                    <div className="mb-3">
+                                        <label htmlFor={`${sectionType}-title-${item.id}`} className="block text-sm font-medium text-gray-700">
+                                            {isExperience ? 'Job Title:' : isEducation ? 'Degree/Qualification:' : 'Project Title:'}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id={`${sectionType}-title-${item.id}`}
+                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+                                            value={item.title}
+                                            onChange={(e) => updateListItem(sectionType, item.id, 'title', e.target.value)}
+                                            placeholder={isExperience ? 'e.g., Senior Frontend Developer' : isEducation ? 'e.g., Master of Science' : 'e.g., E-commerce Platform Redesign'}
+                                        />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor={`${sectionType}-company-university-client-${item.id}`} className="block text-sm font-medium text-gray-700">
+                                            {isExperience ? 'Company:' : isEducation ? 'University:' : 'Client/Organization:'}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id={`${sectionType}-company-university-client-${item.id}`}
+                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+                                            value={isExperience ? item.company : isEducation ? item.university : item.client}
+                                            onChange={(e) => updateListItem(sectionType, item.id, isExperience ? 'company' : isEducation ? 'university' : 'client', e.target.value)}
+                                            placeholder={isExperience ? 'e.g., Tech Solutions Inc.' : isEducation ? 'e.g., State University' : 'e.g., Retail Innovations LLC'}
+                                        />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor={`${sectionType}-location-${item.id}`} className="block text-sm font-medium text-gray-700">Location:</label>
+                                        <input
+                                            type="text"
+                                            id={`${sectionType}-location-${item.id}`}
+                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+                                            value={item.location}
+                                            onChange={(e) => updateListItem(sectionType, item.id, 'location', e.target.value)}
+                                            placeholder="e.g., San Francisco, CA or Remote"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4 mb-3">
+                                        <div>
+                                            <label htmlFor={`${sectionType}-startdate-${item.id}`} className="block text-sm font-medium text-gray-700">Start Date:</label>
+                                            <input
+                                                type="text"
+                                                id={`${sectionType}-startdate-${item.id}`}
+                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+                                                value={item.startDate}
+                                                onChange={(e) => updateListItem(sectionType, item.id, 'startDate', e.target.value)}
+                                                placeholder="e.g., Jan 2022"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor={`${sectionType}-enddate-${item.id}`} className="block text-sm font-medium text-gray-700">End Date:</label>
+                                            <input
+                                                type="text"
+                                                id={`${sectionType}-enddate-${item.id}`}
+                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+                                                value={item.endDate}
+                                                onChange={(e) => updateListItem(sectionType, item.id, 'endDate', e.target.value)}
+                                                placeholder="e.g., Present or Dec 2021"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="block text-sm font-medium text-gray-700">Description/Bullet Points:</label>
+                                        {/* Added a check for item.description existence and array type */}
+                                        {item.description && Array.isArray(item.description) && item.description.map((point, pointIndex) => (
+                                            <div key={pointIndex} className="flex items-center mt-2">
+                                                <textarea
+                                                    ref={el => setTextAreaRef(item.id, pointIndex, el)} // Set ref for individual textarea
+                                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 flex-grow mr-2"
+                                                    value={point}
+                                                    onChange={(e) => updateDescriptionPoint(sectionType, item.id, pointIndex, e.target.value)}
+                                                    placeholder="e.g., Developed responsive web applications."
+                                                    rows="2" // Default rows
+                                                />
+                                                <button
+                                                    onClick={() => removeDescriptionPoint(sectionType, item.id, pointIndex)}
+                                                    className="p-1 text-red-500 rounded-full hover:bg-red-100"
+                                                    aria-label="Remove bullet point"
+                                                    title="Remove bullet point"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <button
+                                            onClick={() => addDescriptionPoint(sectionType, item.id)}
+                                            className="mt-2 text-blue-600 hover:text-blue-800 text-sm flex items-center"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            Add Bullet Point
+                                        </button>
+                                    </div>
+                                </>
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
+
+            // Component for editing skills (technical and soft)
+            const SkillsEditor = ({ skills, updateSkills }) => (
+                <div className="p-4 bg-white rounded-lg shadow-sm mb-4 border border-gray-200">
+                    {/* Title is now handled by DraggableSectionWrapper */}
+                    <div className="mb-3">
+                        <label htmlFor="technical-skills" className="block text-sm font-medium text-gray-700">Technical Skills (comma-separated):</label>
+                        <textarea
+                            id="technical-skills"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 h-20"
+                            value={skills.technical.join(', ')}
+                            onChange={(e) => updateSkills('technical', e.target.value)}
+                            placeholder="e.g., JavaScript, React, CSS, HTML, Git"
+                        />
+                    </div>
+                    <div className="mb-3">
+                        <label htmlFor="soft-skills" className="block text-sm font-medium text-gray-700">Soft Skills (comma-separated):</label>
+                        <textarea
+                            id="soft-skills"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 h-20"
+                            value={skills.soft.join(', ')}
+                            onChange={(e) => updateSkills('soft', e.target.value)}
+                            placeholder="e.g., Communication, Teamwork, Problem Solving"
+                        />
+                    </div>
+                </div>
+            );
+
+            // Resume Preview Component - Memoized to prevent unnecessary re-renders
+            const ResumePreview = memo(({ resumeData, selectedFont, selectedTemplate, sectionsOrder, baseFontSize, boldOption }) => { // Added new props
+                // Function to get specific Tailwind CSS classes based on the selected template
+                const getTemplateClasses = (templateId) => {
+                    switch (templateId) {
+                        case 'classic':
+                            return {
+                                headerClass: 'text-center mb-5',
+                                nameClass: 'text-4xl font-bold text-gray-900',
+                                contactClass: 'text-sm text-gray-600 mt-1',
+                                sectionTitleClass: 'text-2xl font-bold text-gray-800 border-b-2 border-gray-700 pb-1 mb-4 mt-8',
+                                experienceHeaderClass: 'flex flex-wrap justify-between items-baseline mb-1',
+                                jobTitleClass: 'text-lg font-bold',
+                                companyLocationClass: 'text-md italic text-gray-700',
+                                datesClass: 'text-sm text-gray-600',
+                                descriptionListClass: 'list-disc ml-5 text-gray-800',
+                                skillItemClass: 'inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2',
+                                baseLayoutClass: '' // No specific layout class for classic
+                            };
+                        case 'modern':
+                            return {
+                                headerClass: 'text-left mb-6 p-4 bg-blue-50 rounded-lg',
+                                nameClass: 'text-3xl font-extrabold text-blue-800',
+                                contactClass: 'text-sm text-blue-700 mt-1',
+                                sectionTitleClass: 'text-2xl font-extrabold text-blue-800 border-l-4 border-blue-600 pl-3 mb-4 mt-8',
+                                experienceHeaderClass: 'flex flex-wrap justify-between items-baseline mb-1',
+                                jobTitleClass: 'text-lg font-semibold text-gray-900',
+                                companyLocationClass: 'text-md text-gray-700',
+                                datesClass: 'text-sm text-gray-600',
+                                descriptionListClass: 'list-disc ml-5 text-gray-800',
+                                skillItemClass: 'inline-block bg-blue-100 text-blue-800 rounded-full px-3 py-1 text-sm font-semibold mr-2 mb-2',
+                                baseLayoutClass: ''
+                            };
+                        case 'minimalist':
+                            return {
+                                headerClass: 'text-left mb-6',
+                                nameClass: 'text-4xl font-bold text-gray-900',
+                                contactClass: 'text-base text-gray-700 mt-2 leading-tight',
+                                sectionTitleClass: 'text-xl font-bold uppercase tracking-wider text-gray-800 border-b border-gray-400 pb-1 mb-4 mt-8',
+                                experienceHeaderClass: 'flex flex-wrap justify-between items-baseline mb-1',
+                                jobTitleClass: 'text-lg font-semibold',
+                                companyLocationClass: 'text-md italic text-gray-600',
+                                datesClass: 'text-sm text-gray-500',
+                                descriptionListClass: 'list-none ml-0 text-gray-800', // No bullets, use dashes for effect
+                                skillItemClass: 'inline-block text-sm text-gray-800 mr-4 mb-2', // No background/border, just text
+                                baseLayoutClass: ''
+                            };
+                        default:
+                            return {}; // Fallback for undefined template
+                    }
+                };
+
+                // Destructure template-specific classes
+                const {
+                    headerClass, nameClass, contactClass, sectionTitleClass,
+                    experienceHeaderClass, jobTitleClass, companyLocationClass, datesClass,
+                    descriptionListClass, skillItemClass, baseLayoutClass
+                } = getTemplateClasses(selectedTemplate);
+
+                // Apply the selected font family directly via inline style
+                const fontStyle = {
+                    fontFamily: getFontFamily(selectedFont),
+                    fontSize: `${baseFontSize}pt`, // Apply base font size
+                };
+
+                // Helper to get bold class based on boldOption
+                const getBoldClass = (defaultClass) => {
+                    if (boldOption === 'more') {
+                        // We use !font-extrabold here in JSX for the preview.
+                        // For the actual PDF/PNG generation, the Jinja2 template's
+                        // CSS will handle font-weight dynamically.
+                        return `${defaultClass} !font-extrabold`;
+                    } else if (boldOption === 'minimal') {
+                        return `${defaultClass} !font-normal`;
+                    }
+                    return defaultClass; // Use template default
+                };
+
+                // Render the resume preview content dynamically based on sectionsOrder
+                return (
+                    <div className={`p-8 bg-white rounded-lg shadow-lg max-w-full overflow-hidden w-full ${baseLayoutClass}`} style={fontStyle}>
+                        {sectionsOrder.map(sectionId => {
+                            switch (sectionId) {
+                                case 'personalInfo':
+                                    return (
+                                        <React.Fragment key={sectionId}>
+                                            <div className={`${headerClass} pb-4 border-b border-gray-200`}>
+                                                <h1 className={`${getBoldClass(nameClass)}`}>{resumeData.personalInfo.name}</h1>
+                                                <p className={`${getBoldClass('text-xl font-semibold text-gray-700')} mt-1`}>{resumeData.personalInfo.title}</p>
+                                                <div className={`${contactClass} flex flex-wrap gap-x-2 mt-2 items-center`}>
+                                                    {resumeData.personalInfo.email && (
+                                                        <>
+                                                            <span>{resumeData.personalInfo.email}</span>
+                                                            {(resumeData.personalInfo.phone || resumeData.personalInfo.linkedin || resumeData.personalInfo.github || resumeData.personalInfo.website) && <span className="mx-1">|</span>}
+                                                        </>
+                                                    )}
+                                                    {resumeData.personalInfo.phone && (
+                                                        <>
+                                                            <span>{resumeData.personalInfo.phone}</span>
+                                                            {(resumeData.personalInfo.linkedin || resumeData.personalInfo.github || resumeData.personalInfo.website) && <span className="mx-1">|</span>}
+                                                        </>
+                                                    )}
+                                                    {resumeData.personalInfo.linkedin && (
+                                                        <>
+                                                            <span>
+                                                                <a href={`https://${resumeData.personalInfo.linkedin}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                                                    {resumeData.personalInfo.linkedin}
+                                                                </a>
+                                                            </span>
+                                                            {(resumeData.personalInfo.github || resumeData.personalInfo.website) && <span className="mx-1">|</span>}
+                                                        </>
+                                                    )}
+                                                    {resumeData.personalInfo.github && (
+                                                        <>
+                                                            <span>
+                                                                <a href={`https://${resumeData.personalInfo.github}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                                                    {resumeData.personalInfo.github}
+                                                                </a>
+                                                            </span>
+                                                            {resumeData.personalInfo.website && <span className="mx-1">|</span>}
+                                                        </>
+                                                    )}
+                                                    {resumeData.personalInfo.website && (
+                                                        <span>
+                                                            <a href={`https://${resumeData.personalInfo.website}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                                                {resumeData.personalInfo.website}
+                                                            </a>
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {resumeData.personalInfo.summary && (
+                                                <div className="mt-6">
+                                                    <h2 className={`${getBoldClass(sectionTitleClass)}`}>Summary</h2>
+                                                    {/* FIX: Changed Jinja2 syntax to JSX syntax */}
+                                                    <p className="text-gray-800 leading-relaxed">{resumeData.personalInfo.summary}</p>
+                                                </div>
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                case 'experience':
+                                    return resumeData.experience.length > 0 && (
+                                        <div key={sectionId} className="mt-6">
+                                            <h2 className={`${getBoldClass(sectionTitleClass)}`}>Experience</h2>
+                                            {resumeData.experience.map(exp => (
+                                                <div key={exp.id} className="mb-4">
+                                                    <div className={`${experienceHeaderClass}`}>
+                                                        <div>
+                                                            <h3 className={`${getBoldClass(jobTitleClass)}`}>{exp.title}</h3>
+                                                            <p className={`${companyLocationClass}`}>{exp.company} | {exp.location}</p>
+                                                        </div>
+                                                        <p className={`${datesClass}`}>{exp.startDate} - {exp.endDate}</p>
+                                                    </div>
+                                                    <ul className={`${descriptionListClass}`}>
+                                                        {exp.description.map((point, idx) => (
+                                                            <li key={idx} className={`${selectedTemplate === 'minimalist' ? 'relative pl-4 before:content-["-"] before:absolute before:left-0 before:top-0 before:font-bold before:text-gray-800' : ''}`}>
+                                                                {point}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                case 'projects': // Render Projects section
+                                    return resumeData.projects.length > 0 && (
+                                        <div key={sectionId} className="mt-6">
+                                            <h2 className={`${getBoldClass(sectionTitleClass)}`}>Projects</h2>
+                                            {resumeData.projects.map(proj => (
+                                                <div key={proj.id} className="mb-4">
+                                                    <div className={`${experienceHeaderClass}`}>
+                                                        <div>
+                                                            <h3 className={`${getBoldClass(jobTitleClass)}`}>{proj.title}</h3>
+                                                            {/* Display client and location for projects */}
+                                                            <p className={`${companyLocationClass}`}>{proj.client} | {proj.location}</p>
+                                                        </div>
+                                                        <p className={`${datesClass}`}>{proj.startDate} - {proj.endDate}</p>
+                                                    </div>
+                                                    <ul className={`${descriptionListClass}`}>
+                                                        {proj.description.map((point, idx) => (
+                                                            <li key={idx} className={`${selectedTemplate === 'minimalist' ? 'relative pl-4 before:content-["-"] before:absolute before:left-0 before:top-0 before:font-bold before:text-gray-800' : ''}`}>
+                                                                {point}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                case 'education':
+                                    return resumeData.education.length > 0 && (
+                                        <div key={sectionId} className="mt-6">
+                                            <h2 className={`${getBoldClass(sectionTitleClass)}`}>Education</h2>
+                                            {resumeData.education.map(edu => (
+                                                <div key={edu.id} className="mb-4">
+                                                    <div className={`${experienceHeaderClass}`}>
+                                                        <div>
+                                                            <h3 className={`${getBoldClass(jobTitleClass)}`}>{edu.degree}</h3>
+                                                            <p className={`${companyLocationClass}`}>{edu.university} | {edu.location}</p>
+                                                        </div>
+                                                        <p className={`${datesClass}`}>{edu.startDate} - {edu.endDate}</p>
+                                                    </div>
+                                                    <ul className={`${descriptionListClass}`}>
+                                                        {edu.description.map((point, idx) => (
+                                                            <li key={idx} className={`${selectedTemplate === 'minimalist' ? 'relative pl-4 before:content-["-"] before:absolute before:left-0 before:top-0 before:font-bold before:text-gray-800' : ''}`}>
+                                                                {point}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                case 'skills':
+                                    return (resumeData.skills.technical.length > 0 || resumeData.skills.soft.length > 0) && (
+                                        <div key={sectionId} className="mt-6">
+                                            <h2 className={`${getBoldClass(sectionTitleClass)}`}>Skills</h2>
+                                            {resumeData.skills.technical.length > 0 && (
+                                                <div className="mb-2">
+                                                    <h3 className={`${getBoldClass('font-semibold text-md text-gray-800')} mb-2`}>Technical Skills:</h3>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {resumeData.skills.technical.map((skill, idx) => (
+                                                            <span key={idx} className={`${skillItemClass}`}>{skill}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {resumeData.skills.soft.length > 0 && (
+                                                <div className="mt-4">
+                                                    <h3 className={`${getBoldClass('font-semibold text-md text-gray-800')} mb-2`}>Soft Skills:</h3>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {resumeData.skills.soft.map((skill, idx) => (
+                                                            <span key={idx} className={`${skillItemClass}`}>{skill}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                default:
+                                    return null;
+                            }
+                        })}
+                    </div>
+                );
+            });
+
+            // Confirmation Modal Component
+            const ConfirmModal = ({ show, title, message, onConfirm, onCancel }) => {
+                if (!show) return null; // Render nothing if modal is not shown
+
+                return (
+                    // Fixed overlay to cover the entire screen
+                    <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
+                        {/* Modal content container */}
+                        <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
+                            <h3 className="text-xl font-semibold mb-4 text-gray-900">{title}</h3>
+                            <p className="text-gray-700 mb-6">{message}</p>
+                            <div className="flex justify-center space-x-4">
+                                {/* Cancel button */}
+                                <button
+                                    onClick={onCancel}
+                                    className="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75"
+                                >
+                                    Cancel
+                                </button>
+                                {/* Confirm button */}
+                                <button
+                                    onClick={onConfirm}
+                                    className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75"
+                                >
+                                    Confirm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Custom Message/Alert Component (replaces window.alert)
+            const [message, setMessage] = useState(null); // { text: '', type: 'info'|'success'|'warning'|'error' }
+
+            const displayMessage = (text, type = 'info', duration = 3000) => {
+                setMessage({ text, type });
+                if (duration) {
+                    setTimeout(() => setMessage(null), duration);
+                }
+            };
+
+            const MessageDisplay = ({ message }) => {
+                if (!message) return null;
+
+                let bgColorClass = 'bg-blue-500';
+                if (message.type === 'success') bgColorClass = 'bg-green-500';
+                else if (message.type === 'warning') bgColorClass = 'bg-yellow-500';
+                else if (message.type === 'error') bgColorClass = 'bg-red-500';
+
+                return (
+                    <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 p-4 rounded-lg text-white shadow-lg z-50 ${bgColorClass}`}>
+                        {message.text}
+                        <button onClick={() => setMessage(null)} className="ml-4 font-bold">X</button>
+                    </div>
+                );
+            };
+
+            // New DraggableSectionWrapper component
+            const DraggableSectionWrapper = ({ id, titleText, children, onReorderSections }) => {
+                // State to track if this specific wrapper is being dragged over
+                const [isDragOver, setIsDragOver] = useState(false);
+
+                const handleDragStartSection = useCallback((e) => {
+                    // Store the ID of the section being dragged
+                    e.dataTransfer.setData('text/plain', id);
+                    e.dataTransfer.effectAllowed = 'move';
+                    // Using a transparent image for drag feedback (prevents default ghost image)
+                    const img = new Image();
+                    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                    e.dataTransfer.setDragImage(img, 0, 0);
+                }, [id]);
+
+                const handleDragOverSection = useCallback((e) => {
+                    e.preventDefault(); // Crucial to allow a drop
+                    e.dataTransfer.dropEffect = 'move';
+                    // Add class for visual feedback if not the dragged item itself
+                    if (e.dataTransfer.getData('text/plain') !== id) {
+                        setIsDragOver(true);
+                    }
+                }, [id]);
+
+                const handleDragLeaveSection = useCallback(() => {
+                    setIsDragOver(false); // Remove visual feedback
+                }, []);
+
+                const handleDropSection = useCallback((e) => {
+                    e.preventDefault();
+                    setIsDragOver(false); // Remove visual feedback
+
+                    const draggedId = e.dataTransfer.getData('text/plain');
+                    const targetId = id;
+
+                    // Ensure we are dropping on a different section
+                    if (draggedId && draggedId !== targetId) {
+                        onReorderSections(draggedId, targetId);
+                    }
+                }, [id, onReorderSections]);
+
+                const handleDragEndSection = useCallback(() => {
+                    // Clean up any remaining drag-over classes on drag end for all elements
+                    document.querySelectorAll('.draggable-section-wrapper.drag-over-section').forEach(el => el.classList.remove('drag-over-section'));
+                    setIsDragOver(false);
+                }, []);
+
+                return (
+                    <div
+                        id={id}
+                        className={`draggable-section-wrapper p-4 bg-white rounded-lg shadow-sm border border-gray-200 relative cursor-grab
+                                   ${isDragOver ? 'drag-over-section' : ''}`}
+                        draggable="true"
+                        onDragStart={handleDragStartSection}
+                        onDragOver={handleDragOverSection}
+                        onDrop={handleDropSection}
+                        onDragLeave={handleDragLeaveSection}
+                        onDragEnd={handleDragEndSection}
+                    >
+                        {/* Drag Handle for Section */}
+                        <div className="absolute top-2 left-2 text-gray-400 cursor-grab hover:text-gray-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                                <path fillRule="evenodd" d="M3 7a1 1 0 011-1h16a1 1 0 110 2H4a1 1 0 01-1-1zM3 12a1 1 0 011-1h16a1 1 0 110 2H4a1 1 0 01-1-1zM3 17a1 1 0 011-1h16a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                        <h3 className="text-xl font-semibold mb-3 text-gray-800 text-center">{titleText}</h3>
+                        {children}
+                    </div>
+                );
+            };
+
+
+            // Main App render
+            return (
+                <div className="flex flex-col lg:flex-row min-h-screen bg-gray-100 p-4 font-inter">
+                    {/* Control Panel (left sidebar) */}
+                    <div className="lg:w-1/3 p-4 lg:pr-8 bg-white rounded-lg shadow-md mb-6 lg:mb-0 lg:sticky lg:top-4 overflow-y-auto max-h-[calc(100vh-32px)] no-scrollbar">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Resume Builder Controls</h2>
+
+                        {/* Font Selector */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <label htmlFor="font-select" className="block text-md font-medium text-gray-800 mb-2">Choose Font:</label>
+                            <select
+                                id="font-select"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 bg-white"
+                                value={selectedFont}
+                                onChange={(e) => setSelectedFont(e.target.value)}
+                            >
+                                {fonts.map(font => (
+                                    <option key={font.name} value={font.name}>
+                                        {font.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* NEW: Font Size Control */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <label htmlFor="font-size-slider" className="block text-md font-medium text-gray-800 mb-2">Base Font Size: {baseFontSize}pt</label>
+                            <input
+                                type="range"
+                                id="font-size-slider"
+                                min="8"
+                                max="14"
+                                value={baseFontSize}
+                                onChange={(e) => setBaseFontSize(Number(e.target.value))}
+                                className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer range-thumb-blue"
+                            />
+                            <style>{`
+                                input[type="range"]::-webkit-slider-thumb {
+                                    -webkit-appearance: none;
+                                    appearance: none;
+                                    width: 16px;
+                                    height: 16px;
+                                    border-radius: 50%;
+                                    background: #3b82f6; /* Tailwind blue-500 */
+                                    cursor: pointer;
+                                    border: 2px solid #fff;
+                                    box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.3);
+                                }
+                                input[type="range"]::-moz-range-thumb {
+                                    width: 16px;
+                                    height: 16px;
+                                    border-radius: 50%;
+                                    background: #3b82f6;
+                                    cursor: pointer;
+                                    border: 2px solid #fff;
+                                    box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.3);
+                                }
+                            `}</style>
+                        </div>
+
+                        {/* NEW: Bolding Options */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <label className="block text-md font-medium text-gray-800 mb-2">Bolding Option:</label>
+                            <div className="flex flex-col space-y-2">
+                                <label className="inline-flex items-center">
+                                    <input
+                                        type="radio"
+                                        className="form-radio text-blue-600 h-4 w-4"
+                                        name="boldOption"
+                                        value="normal"
+                                        checked={boldOption === 'normal'}
+                                        onChange={(e) => setBoldOption(e.target.value)}
+                                    />
+                                    <span className="ml-2 text-gray-700">Default (Template's Bolding)</span>
+                                </label>
+                                <label className="inline-flex items-center">
+                                    <input
+                                        type="radio"
+                                        className="form-radio text-blue-600 h-4 w-4"
+                                        name="boldOption"
+                                        value="more"
+                                        checked={boldOption === 'more'}
+                                        onChange={(e) => setBoldOption(e.target.value)}
+                                    />
+                                    <span className="ml-2 text-gray-700">More Bolding</span>
+                                </label>
+                                <label className="inline-flex items-center">
+                                    <input
+                                        type="radio"
+                                        className="form-radio text-blue-600 h-4 w-4"
+                                        name="boldOption"
+                                        value="minimal"
+                                        checked={boldOption === 'minimal'}
+                                        onChange={(e) => setBoldOption(e.target.value)}
+                                    />
+                                    <span className="ml-2 text-gray-700">Minimal Bolding</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Template Selector */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <label className="block text-md font-medium text-gray-800 mb-2">Choose Template:</label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
+                                {templates.map(template => (
+                                    <button
+                                        key={template.id}
+                                        className={`
+                                            px-4 py-2 rounded-md border-2
+                                            ${selectedTemplate === template.id
+                                                ? 'bg-blue-600 text-white border-blue-700 shadow-md transform scale-105'
+                                                : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50 hover:border-blue-400'
+                                            }
+                                            transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                                        `}
+                                        onClick={() => setSelectedTemplate(template.id)}
+                                    >
+                                        {template.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Dynamically render sections based on sectionsOrder state */}
+                        {sectionsOrder.map(sectionId => {
+                            switch (sectionId) {
+                                case 'personalInfo':
+                                    return (
+                                        <DraggableSectionWrapper key={sectionId} id={sectionId} titleText="Personal Information" onReorderSections={handleReorderSections}>
+                                            <PersonalInfoEditor personalInfo={resumeData.personalInfo} updatePersonalInfo={updatePersonalInfo} />
+                                        </DraggableSectionWrapper>
+                                    );
+                                case 'experience':
+                                    return (
+                                        <DraggableSectionWrapper key={sectionId} id={sectionId} titleText="Experience" onReorderSections={handleReorderSections}>
+                                            <ListItemEditor
+                                                items={resumeData.experience}
+                                                sectionType="experience"
+                                                title="Experience"
+                                                updateListItem={updateListItem}
+                                                updateDescriptionPoint={updateDescriptionPoint}
+                                                addDescriptionPoint={addDescriptionPoint}
+                                                removeDescriptionPoint={removeDescriptionPoint}
+                                                removeItem={removeItem}
+                                                onReorderItems={handleReorderItems}
+                                            />
+                                            <button
+                                                onClick={addExperience}
+                                                className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition duration-200 ease-in-out mt-2 shadow-sm flex items-center justify-center space-x-2"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                </svg>
+                                                <span>Add Experience</span>
+                                            </button>
+                                        </DraggableSectionWrapper>
+                                    );
+                                case 'education':
+                                    return (
+                                        <DraggableSectionWrapper key={sectionId} id={sectionId} titleText="Education" onReorderSections={handleReorderSections}>
+                                            <ListItemEditor
+                                                items={resumeData.education}
+                                                sectionType="education"
+                                                title="Education"
+                                                updateListItem={updateListItem}
+                                                updateDescriptionPoint={updateDescriptionPoint}
+                                                addDescriptionPoint={addDescriptionPoint}
+                                                removeDescriptionPoint={removeDescriptionPoint}
+                                                removeItem={removeItem}
+                                                onReorderItems={handleReorderItems}
+                                            />
+                                            <button
+                                                onClick={addEducation}
+                                                className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition duration-200 ease-in-out mt-2 shadow-sm flex items-center justify-center space-x-2"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                </svg>
+                                                <span>Add Education</span>
+                                            </button>
+                                        </DraggableSectionWrapper>
+                                    );
+                                case 'projects': // New Projects section
+                                    return (
+                                        <DraggableSectionWrapper key={sectionId} id={sectionId} titleText="Projects" onReorderSections={handleReorderSections}>
+                                            <ListItemEditor
+                                                items={resumeData.projects}
+                                                sectionType="projects"
+                                                title="Projects"
+                                                updateListItem={updateListItem}
+                                                updateDescriptionPoint={updateDescriptionPoint}
+                                                addDescriptionPoint={addDescriptionPoint}
+                                                removeDescriptionPoint={removeDescriptionPoint}
+                                                removeItem={removeItem}
+                                                onReorderItems={handleReorderItems}
+                                            />
+                                            <button
+                                                onClick={addProject}
+                                                className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition duration-200 ease-in-out mt-2 shadow-sm flex items-center justify-center space-x-2"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                </svg>
+                                                <span>Add Project</span>
+                                            </button>
+                                        </DraggableSectionWrapper>
+                                    );
+                                case 'skills':
+                                    return (resumeData.skills.technical.length > 0 || resumeData.skills.soft.length > 0) && (
+                                        <DraggableSectionWrapper key={sectionId} id={sectionId} titleText="Skills" onReorderSections={handleReorderSections}>
+                                            <SkillsEditor skills={resumeData.skills} updateSkills={updateSkills} />
+                                        </DraggableSectionWrapper>
+                                    );
+                                default:
+                                    return null;
+                            }
+                        })}
+
+                        {/* ATS Resume Checker Section */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h3 className="text-xl font-semibold mb-3 text-gray-800 text-center">ATS Resume Checker</h3>
+                            <div className="mb-3">
+                                <label htmlFor="job-description" className="block text-sm font-medium text-gray-700 mb-1">Paste Job Description:</label>
+                                <textarea
+                                    id="job-description"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 h-32"
+                                    value={jobDescription}
+                                    onChange={(e) => setJobDescription(e.target.value)}
+                                    placeholder="Paste the job description here..."
+                                ></textarea>
+                            </div>
+                            <button
+                                onClick={handleCheckAts}
+                                disabled={isCheckingAts}
+                                className={`w-full bg-blue-700 text-white py-2 rounded-md transition duration-200 ease-in-out text-base font-semibold shadow-md flex items-center justify-center space-x-2 mb-3
+                                    ${isCheckingAts ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-800'}`}
+                            >
+                                {isCheckingAts ? (
+                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                                    </svg>
+                                )}
+                                <span>{isCheckingAts ? 'Analyzing...' : 'Check ATS Score'}</span>
+                            </button>
+
+                            {atsResult && (
+                                <div className="mt-4 p-4 bg-white rounded-lg border border-gray-300 shadow-inner">
+                                    <h4 className="text-lg font-bold text-gray-800 mb-2">ATS Score: <span className="text-blue-600">{atsResult.score}%</span></h4>
+                                    {/* Defensive rendering for suggestions */}
+                                    {atsResult.suggestions?.length > 0 && (
+                                        <div className="mb-2">
+                                            <p className="font-semibold text-gray-700">Suggestions for Improvement:</p>
+                                            <ul className="list-disc list-inside text-sm text-gray-600">
+                                                {atsResult.suggestions.map((s, idx) => <li key={idx}>{s}</li>)}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {/* Defensive rendering for keywords */}
+                                    {atsResult.keywords && (
+                                        <div className="text-sm">
+                                            {atsResult.keywords.present?.length > 0 && (
+                                                <p className="mt-2"><span className="font-semibold text-green-700">Keywords Found:</span> {atsResult.keywords.present.join(', ')}</p>
+                                            )}
+                                            {atsResult.keywords.missing?.length > 0 && (
+                                                <p className="mt-2"><span className="font-semibold text-red-700">Missing Keywords:</span> {atsResult.keywords.missing.join(', ')}</p>
+                                            )}
+                                        </div>
+                                    )}
+                                    {/* Temporary: Raw JSON for debugging - remove after issue is resolved */}
+                                    {/* <pre className="mt-4 text-xs bg-gray-100 p-2 rounded overflow-auto">
+                                        {JSON.stringify(atsResult, null, 2)}
+                                    </pre> */}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Download Buttons - now trigger calls to the Python backend */}
+                        <button
+                            onClick={handleDownloadPdf}
+                            disabled={isGenerating}
+                            className={`w-full bg-red-600 text-white py-3 rounded-md transition duration-200 ease-in-out text-lg font-semibold shadow-md flex items-center justify-center space-x-2 mb-3
+                                ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700'}`}
+                        >
+                            {isGenerating ? (
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            )}
+                            <span>{isGenerating ? 'Generating...' : 'Download Resume (.pdf)'}</span>
+                        </button>
+
+                        <button
+                            onClick={handleDownloadDoc}
+                            disabled={isGenerating}
+                            className={`w-full bg-green-600 text-white py-3 rounded-md transition duration-200 ease-in-out text-lg font-semibold shadow-md flex items-center justify-center space-x-2 mb-3
+                                ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'}`}
+                        >
+                            {isGenerating ? (
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            )}
+                            <span>{isGenerating ? 'Generating...' : 'Download Resume (.doc)'}</span>
+                        </button>
+                        <button
+                            onClick={handleDownloadPng}
+                            disabled={isGenerating}
+                            className={`w-full bg-purple-600 text-white py-3 rounded-md transition duration-200 ease-in-out text-lg font-semibold shadow-md flex items-center justify-center space-x-2
+                                ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-700'}`}
+                        >
+                            {isGenerating ? (
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                            )}
+                            <span>{isGenerating ? 'Generating...' : 'Download Resume (.png)'}</span>
+                        </button>
+                    </div>
+
+                    {/* Resume Preview Area (right side) */}
+                    <div className="lg:w-2/3 p-4 lg:pl-8 flex-grow">
+                        <div ref={resumePreviewRef} className="rounded-lg shadow-md min-h-[800px] bg-white">
+                            {/* The ResumePreview component renders the actual resume content */}
+                            <ResumePreview
+                                resumeData={resumeData}
+                                selectedFont={selectedFont}
+                                selectedTemplate={selectedTemplate}
+                                sectionsOrder={sectionsOrder} // Passed sectionsOrder to ResumePreview
+                                baseFontSize={baseFontSize} // NEW: Pass baseFontSize to ResumePreview
+                                boldOption={boldOption}     // NEW: Pass boldOption to ResumePreview
+                            />
+                        </div>
+                    </div>
+
+                    {/* Confirmation Modal (hidden by default) */}
+                    <ConfirmModal
+                        show={showConfirmModal}
+                        title="Confirm Deletion"
+                        message={`Are you sure you want to delete this ${sectionTypeToDelete === 'experience' ? 'experience entry' : sectionTypeToDelete === 'education' ? 'education entry' : 'project entry'}? This action cannot be undone.`}
+                        onConfirm={confirmRemoveItem}
+                        onCancel={cancelRemoveItem}
+                    />
+
+                    {/* Global Message Display */}
+                    <MessageDisplay message={message} />
+                </div>
+            );
+        };
+
+        // Render the App component into the #root div
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

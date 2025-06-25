@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ resume_data.personalInfo.name or "Resume" }}</title>
+    <!-- Tailwind CSS CDN - Ensure this loads within Playwright/Word -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Inter and Open Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Custom font classes for Tailwind (ensure these are loaded/defined if not using CDN purge) */
+        .font-inter { font-family: 'Inter', sans-serif; }
+        .font-arial { font-family: Arial, sans-serif; }
+        .font-times { font-family: 'Times New Roman', serif; }
+        .font-georgia { font-family: Georgia, serif; }
+        .font-open-sans { font-family: 'Open Sans', sans-serif; }
+
+        /* ENSURE ENTIRE PAGE BACKGROUND IS WHITE AND ALLOW CONTENT TO FLOW */
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: auto; /* Allow height to adjust to content */
+            min-height: 100%; /* Ensure it takes at least 100% height */
+            width: 100%;
+            background-color: #ffffff !important; /* Force white background for both html and body */
+        }
+
+        /* The page-wrapper will now act more like a document frame for printing */
+        .page-wrapper {
+            background-color: #ffffff; /* Explicitly set wrapper background to white */
+            width: 8.5in; /* Fixed width for a standard letter page */
+            margin: 0 auto; /* Center the page content */
+            box-shadow: 0 0 15px rgba(0,0,0,0.1); /* Subtle shadow for visual definition */
+            min-height: 11in; /* Minimum height for a single page */
+        }
+
+        .resume-container {
+            padding: 30px;
+            background-color: #fff; /* Ensure the actual resume content area is white */
+        } 
+
+        body {
+            /* Apply the selected font family and base font size */
+            font-family: {{ font_family_css }} !important; /* !important for strong override */
+            font-size: {{ base_font_size }}pt !important; /* Base font size from user input, !important */
+            line-height: 1.6;
+            color: #333;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Helper to get bolding weight based on user option */
+        {% macro get_bold_weight(default_weight) %}
+            {% if bold_option == 'more' %}
+                800
+            {% elif bold_option == 'minimal' %}
+                400
+            {% else %} {# 'normal' or default #}
+                {{ default_weight }}
+            {% endif %}
+        {% endmacro %}
+
+        /* Base styles for headings, adjusted relative to base_font_size */
+        h1 { font-size: {{ base_font_size * 2.2 | round }}pt !important; font-weight: {{ get_bold_weight(700) }} !important; color: #1a202c !important; }
+        h2 { font-size: {{ base_font_size * 1.6 | round }}pt !important; font-weight: {{ get_bold_weight(700) }} !important; color: #2d3748 !important; }
+        h3 { font-size: {{ base_font_size * 1.2 | round }}pt !important; font-weight: {{ get_bold_weight(600) }} !important; color: #2d3748 !important; }
+        h4 { font-size: {{ base_font_size * 1.1 | round }}pt !important; font-weight: {{ get_bold_weight(500) }} !important; color: #2d3748 !important; }
+        p, li, span { font-size: {{ base_font_size }}pt !important; } /* Default to base font size */
+
+        /* Specific overrides or additions for elements not covered by general tags */
+        .contact-info span { font-size: {{ base_font_size * 0.9 | round }}pt !important; } /* Slightly smaller for contact info */
+        .skill-item { font-size: {{ base_font_size * 0.9 | round }}pt !important; }
+        .experience-company-location, .project-company-location, .education-university-location { font-size: {{ base_font_size * 0.95 | round }}pt !important; }
+        .experience-dates, .project-dates, .education-dates { font-size: {{ base_font_size * 0.85 | round }}pt !important; }
+
+
+        ul { margin-left: 20px; }
+        li { margin-bottom: 5px; }
+        a { color: #2b6cb0; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Classic Template Specific Styles */
+        .template-classic .header { text-align: center; margin-bottom: 20px; }
+        .template-classic .section-title { border-bottom: 2px solid #2d3748; padding-bottom: 5px; margin-top: 25px; margin-bottom: 15px;}
+        .template-classic .experience-item, .template-classic .education-item, .template-classic .project-item { margin-bottom: 15px; }
+        .template-classic .description-list { list-style: disc; margin-left: 20px; }
+        .template-classic .skill-item {
+            background-color: #e2e8f0;
+            border-radius: 4px;
+            padding: 3px 8px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        .template-classic .skills-grid { display: block; margin-top: 10px; }
+
+
+        /* Modern Template Specific Styles */
+        .template-modern .header { text-align: left; margin-bottom: 20px; background-color: #f7fafc; padding: 15px 0; border-radius: 8px; }
+        .template-modern .section-title { border-left: 4px solid #2c5282; padding-left: 10px; margin-top: 30px; margin-bottom: 15px; position: relative; }
+        .template-modern .section-title::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 5px; height: 80%; background-color: #2c5282; border-radius: 2px; }
+        .template-modern .experience-item, .template-modern .education-item, .template-modern .project-item { margin-bottom: 20px; padding: 10px; border-left: 2px solid #cbd5e0; }
+        .template-modern .description-list { list-style: disc; margin-left: 20px; }
+        .template-modern .skill-item { background-color: #e0f2f7; color: #2a698a; border-radius: 12px; padding: 4px 10px; margin-right: 6px; margin-bottom: 6px; display: inline-block; white-space: nowrap; }
+        .template-modern .skills-grid { display: block; margin-top: 10px; }
+
+
+        /* Minimalist Template Specific Styles */
+        .template-minimalist .header { text-align: left; margin-bottom: 25px; }
+        .template-minimalist .section-title { font-weight: {{ get_bold_weight(700) }} !important; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #9ca3af; padding-bottom: 5px; margin-top: 30px; margin-bottom: 10px; }
+        .template-minimalist .experience-item, .template-minimalist .education-item, .template-minimalist .project-item { margin-bottom: 18px; }
+        .template-minimalist .experience-header { display: flex; justify-content: space-between; align-items: baseline; }
+        .template-minimalist .description-list { list-style: none; margin-left: 0; }
+        .template-minimalist .description-list li { margin-bottom: 3px; position: relative; padding-left: 15px; }
+        .template-minimalist .description-list li::before { content: '-'; position: absolute; left: 0; top: 0; color: #2a4365; font-weight: {{ get_bold_weight(700) }} !important; }
+        .template-minimalist .skills-grid { display: block; margin-top: 8px; line-height: 1.8; }
+        .template-minimalist .skill-item { display: inline-block; margin-right: 12px; margin-bottom: 5px; white-space: nowrap; }
+        .template-minimalist .skill-item::before { content: '• '; color: #2a4365; font-weight: {{ get_bold_weight(700) }} !important; }
+
+        /* Debug styling - will be visible in generated file */
+        /* .debug-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 0, 0.7);
+            padding: 5px;
+            font-size: 8pt !important;
+            color: black;
+            border: 1px solid orange;
+            z-index: 1000;
+        } */
+    </style>
+</head>
+<body>
+    <!-- {# Debug Information - REMOVE BEFORE FINAL DEPLOYMENT #}
+    <div class="debug-info">
+        DEBUG: Font Size: {{ base_font_size }}pt, Bold Option: {{ bold_option }}
+    </div> -->
+
+    {# The `page-wrapper` will act as the document page boundary for printing #}
+    <div class="page-wrapper">
+        {# The `template-{{ selected_template }}` class dynamically applies template-specific styles #}
+        <div class="resume-container template-{{ selected_template }}">
+            
+            {# Loop through sections_order to render content dynamically #}
+            {% for section_id in sections_order %}
+                {% if section_id == 'personalInfo' %}
+                    <div class="header pb-4 border-b border-gray-200">
+                        <h1 style="font-size: {{ base_font_size * 2.2 | round }}pt !important; font-weight: {{ get_bold_weight(700) }} !important;">{{ resume_data.personalInfo.name }}</h1>
+                        <p style="font-size: {{ base_font_size * 1.1 | round }}pt !important; font-weight: {{ get_bold_weight(600) }} !important;">{{ resume_data.personalInfo.title }}</p>
+                        <div class="contact-info flex flex-wrap gap-x-4 mt-2" style="font-size: {{ base_font_size * 0.9 | round }}pt !important;">
+                            {% if resume_data.personalInfo.email %}<span>{{ resume_data.personalInfo.email }}{% if resume_data.personalInfo.phone or resume_data.personalInfo.linkedin or resume_data.personalInfo.github or resume_data.personalInfo.website %} | {% endif %}</span>{% endif %}
+                            {% if resume_data.personalInfo.phone %}<span>{{ resume_data.personalInfo.phone }}{% if resume_data.personalInfo.linkedin or resume_data.personalInfo.github or resume_data.personalInfo.website %} | {% endif %}</span>{% endif %}
+                            {% if resume_data.personalInfo.linkedin %}
+                                <span><a href="https://{{ resume_data.personalInfo.linkedin }}" target="_blank" rel="noopener noreferrer">
+                                    {{ resume_data.personalInfo.linkedin }}
+                                </a>{% if resume_data.personalInfo.github or resume_data.personalInfo.website %} | {% endif %}</span>
+                            {% endif %}
+                            {% if resume_data.personalInfo.github %}
+                                <span><a href="https://{{ resume_data.personalInfo.github }}" target="_blank" rel="noopener noreferrer">
+                                    {{ resume_data.personalInfo.github }}
+                                </a>{% if resume_data.personalInfo.website %} | {% endif %}</span>
+                            {% endif %}
+                            {% if resume_data.personalInfo.website %}
+                                <span><a href="https://{{ resume_data.personalInfo.website }}" target="_blank" rel="noopener noreferrer">
+                                    {{ resume_data.personalInfo.website }}
+                                </a></span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if resume_data.personalInfo.summary %}
+                        <div class="mt-6">
+                            <h2 class="section-title" style="font-size: {{ base_font_size * 1.6 | round }}pt !important; font-weight: {{ get_bold_weight(700) }} !important;">Summary</h2>
+                            <p style="font-size: {{ base_font_size }}pt !important;">{{ resume_data.personalInfo.summary }}</p>
+                        </div>
+                    {% endif %}
+
+                {% elif section_id == 'experience' and resume_data.experience %}
+                    <div class="mt-6">
+                        <h2 class="section-title" style="font-size: {{ base_font_size * 1.6 | round }}pt !important; font-weight: {{ get_bold_weight(700) }} !important;">Experience</h2>
+                        {% for exp in resume_data.experience %}
+                            <div class="experience-item mb-4">
+                                <div class="experience-header flex flex-wrap justify-between items-baseline mb-1">
+                                    <div>
+                                        <h3 class="experience-title" style="font-size: {{ base_font_size * 1.2 | round }}pt !important; font-weight: {{ get_bold_weight(600) }} !important;">{{ exp.title }}</h3>
+                                        <p class="experience-company-location" style="font-size: {{ base_font_size * 0.95 | round }}pt !important;">{{ exp.company }} | {{ exp.location }}</p>
+                                    </div>
+                                    <p class="experience-dates" style="font-size: {{ base_font_size * 0.85 | round }}pt !important;">{{ exp.startDate }} - {{ exp.endDate }}</p>
+                                </div>
+                                {% if exp.description %}
+                                    <ul class="description-list" style="font-size: {{ base_font_size }}pt !important;">
+                                        {% for point in exp.description %}
+                                            <li>{{ point }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                {% elif section_id == 'projects' and resume_data.projects %}
+                    <div class="mt-6">
+                        <h2 class="section-title" style="font-size: {{ base_font_size * 1.6 | round }}pt !important; font-weight: {{ get_bold_weight(700) }} !important;">Projects</h2>
+                        {% for proj in resume_data.projects %}
+                            <div class="project-item mb-4">
+                                <div class="experience-header flex flex-wrap justify-between items-baseline mb-1">
+                                    <div>
+                                        <h3 class="experience-title" style="font-size: {{ base_font_size * 1.2 | round }}pt !important; font-weight: {{ get_bold_weight(600) }} !important;">{{ proj.title }}</h3>
+                                        <p class="experience-company-location" style="font-size: {{ base_font_size * 0.95 | round }}pt !important;">{{ proj.client }} | {{ proj.location }}</p>
+                                    </div>
+                                    <p class="experience-dates" style="font-size: {{ base_font_size * 0.85 | round }}pt !important;">{{ proj.startDate }} - {{ proj.endDate }}</p>
+                                </div>
+                                {% if proj.description %}
+                                    <ul class="description-list" style="font-size: {{ base_font_size }}pt !important;">
+                                        {% for point in proj.description %}
+                                            <li>{{ point }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                {% elif section_id == 'education' and resume_data.education %}
+                    <div class="mt-6">
+                        <h2 class="section-title" style="font-size: {{ base_font_size * 1.6 | round }}pt !important; font-weight: {{ get_bold_weight(700) }} !important;">Education</h2>
+                        {% for edu in resume_data.education %}
+                            <div class="education-item mb-4">
+                                <div class="experience-header flex flex-wrap justify-between items-baseline mb-1">
+                                    <div>
+                                        <h3 class="experience-title" style="font-size: {{ base_font_size * 1.2 | round }}pt !important; font-weight: {{ get_bold_weight(600) }} !important;">{{ edu.degree }}</h3>
+                                        <p class="experience-company-location" style="font-size: {{ base_font_size * 0.95 | round }}pt !important;">{{ edu.university }} | {{ edu.location }}</p>
+                                    </div>
+                                    <p class="experience-dates" style="font-size: {{ base_font_size * 0.85 | round }}pt !important;">{{ edu.startDate }} - {{ edu.endDate }}</p>
+                                </div>
+                                {% if edu.description %}
+                                    <ul class="description-list" style="font-size: {{ base_font_size }}pt !important;">
+                                        {% for point in edu.description %}
+                                            <li>{{ point }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                {% elif section_id == 'skills' and (resume_data.skills.technical or resume_data.skills.soft) %}
+                    <div class="mt-6">
+                        <h2 class="section-title" style="font-size: {{ base_font_size * 1.6 | round }}pt !important; font-weight: {{ get_bold_weight(700) }} !important;">Skills</h2>
+                        {% if resume_data.skills.technical %}
+                            <div class="mb-2">
+                                <h3 style="font-weight: {{ get_bold_weight(600) }} !important; font-size: {{ base_font_size * 1.1 | round }}pt !important; margin-bottom: 0.5rem;">Technical Skills:</h3>
+                                <div class="skills-grid flex flex-wrap gap-2">
+                                    {% for skill in resume_data.skills.technical %}
+                                        <span class="skill-item" style="font-size: {{ base_font_size * 0.9 | round }}pt !important;">{{ skill }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if resume_data.skills.soft %}
+                            <div class="mt-4">
+                                <h3 style="font-weight: {{ get_bold_weight(600) }} !important; font-size: {{ base_font_size * 1.1 | round }}pt !important; margin-bottom: 0.5rem;">Soft Skills:</h3>
+                                <div class="skills-grid flex flex-wrap gap-2">
+                                    {% for skill in resume_data.skills.soft %}
+                                        <span class="skill-item" style="font-size: {{ base_font_size * 0.9 | round }}pt !important;">{{ skill }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {# Removed customSections as it's commented out in frontend resumeData #}
+                {% endif %}
+            {% endfor %}
+
+        </div>
+    </div>
+</body>
+</html>
